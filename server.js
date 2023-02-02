@@ -2,6 +2,7 @@ const db=require('./db');
 const dotenv=require('dotenv');
 const express=require('express');
 const app=express();
+
 // const bodyParser=require('body-parser');
 
 
@@ -21,6 +22,8 @@ app.use(express.json());
 // available routes
 app.use('/api/notes',require('./routes/notes'));
 app.use('/api/auth',require('./routes/auth'));
+app.use('/api/playlist',require('./routes/playlist'));
+
 
 
 // app.use(bodyParser.json());

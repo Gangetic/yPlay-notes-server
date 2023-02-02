@@ -5,12 +5,13 @@ const router = express.Router();
 const { body, validationResult } = require('express-validator');
 
 
-// Route 1: Get all notes using: GET "/api/notes/getallnotes". Login required
-// Get all notes: GET /api/notes/fetchallnotes
-router.get('/getallnotes', getUser, async (req, res) => {
-
+// Route 1: Get all notes using: GET "/api/notes/getallnotes/:playlistid". Login required
+// Get all notes: GET /api/notes/getallnotes/:playlistid
+router.get('/getallnotes/:playlistid', getUser, async (req, res) => {
+    const playlistid=req.params.playlistid;
+    console.log(playlistid);
     // find all notes of the user
-    const notes = await Note.find({ user: req.user.id });
+    const notes = await Note.find({ user: req.user.id ,playlistid:playlistid});
     if (notes.length>0) {
         // if notes found
         // send notes as response
@@ -28,7 +29,6 @@ router.get('/getallnotes', getUser, async (req, res) => {
 // Post a note: POST /api/notes/postnote
 router.post('/postnote', getUser, [
     // validation
-    body('content', 'Enter some notes to save').exists(),
     body('videoId', 'Enter a valid videoId').exists()
 ], async (req, res) => {
     // if there are errors, return Bad request and the errors
@@ -38,22 +38,33 @@ router.post('/postnote', getUser, [
     }
     // if no errors, proceed to save note
     // destructuring the content and videoId from the request body
-    const { content, videoId } = req.body;
+    const { content, videoId,title,playlistId } = req.body;
 
-    // check if the note already exists
-    const noteExists = await Note.findOne({ user: req.user.id, videoId: videoId });
-    // if note already exists, return error
-    if (noteExists) {
-        return res.status(400).json({ success: false, message: "Note already exists" });
+    if(content.length==0){
+        return res.json({ success: false, message: "emptyNote" });
     }
     
-    
+
+    // check if the note already exists
+    const noteExists = await Note.findOne({ user: req.user.id, videoId: videoId});
+
+    // if note already exists, return error
+    if (noteExists) {
+        let note= await Note.findOne({ user: req.user.id, videoId: videoId })
+        note.content=content;
+        note.title=title;
+        note.playlistid=playlistid;
+        const updatedNote = await note.save();
+        return res.json({ success: true, message: "Note updated successfully", note: updatedNote });    
+    }
     // if note does not exist, save the note
     try {
         const note = new Note({
             user: req.user.id,
             content,
-            videoId
+            videoId,
+            title,
+            playlistid:playlistId
         });
         const savedNote = await note.save();
         res.json({ success: true, message: "Note added successfully", note: savedNote });
@@ -105,6 +116,23 @@ router.delete('/deletenote/:id', getUser, async (req, res) => {
     }
 });
 
+// Route 5: Get a note using: GET "/api/notes/getnote". Login required
+// Get a note: GET /api/notes/getnote
+// router.get('/getnote/:id', getUser, async (req, res) => {
+//     try {
+//         let note = await Note.findById(req.params.id);
+//         if (!note) {
+//             return res.status(404).json({ success: false, message: "Note not found" });
+//         }
+//         if (note.user.toString() !== req.user.id) {
+//             return res.status(401).json({ success: false, message: "Not allowed to get this note" });
+//         }
+//         res.json({ success: true, message: "Note fetched successfully", note: note });
+//     } catch (err) {
+//         console.log(err);
+//         res.status(500).json({ success: false, message: "Internal server error" });
+//     }
+// });
 
 
 module.exports = router;

@@ -4,11 +4,19 @@ const { Schema } = mongoose;
 
 // for creating notes schema
 const notesSchema = new Schema({
+    playlistid:{
+        type:String,
+        required:true
+    },
     user:{
         type:mongoose.Schema.Types.ObjectId,
         ref:'User'
-    }
-    ,content: {
+    },
+    title: {
+        type: String,
+        required: true
+    },
+    content: {
         type: String,
         required: true
     },
